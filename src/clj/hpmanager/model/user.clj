@@ -5,3 +5,7 @@
             )
   )
 
+(def ^:private sessions
+  "Current active sessions, and their users"
+  ;; TODO add validator
+  (atom {}))
