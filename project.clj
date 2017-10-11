@@ -6,6 +6,7 @@
   :dependencies [[ch.qos.logback/logback-classic "1.1.7"]
                  [clj-time "0.13.0"]
                  [cljs-ajax "0.6.0"]
+                 [codax "1.0.2-SNAPSHOT"]
                  [compojure "1.6.0"]
                  [conman "0.6.4"]
                  [cprop "0.1.10"]
@@ -19,8 +20,8 @@
                  [metosin/ring-http-response "0.9.0"]
                  [mount "0.1.11"]
                  [mysql/mysql-connector-java "6.0.5"]
-                 [org.clojure/clojure "1.9.0-alpha16"]
-                 [org.clojure/clojurescript "1.9.562" :scope "provided"]
+                 [org.clojure/clojure "1.9.0-beta2"]
+                 [org.clojure/clojurescript "1.9.946" :scope "provided"]
                  [org.clojure/tools.cli "0.3.5"]
                  [org.clojure/tools.logging "0.3.1"]
                  [org.webjars.bower/tether "1.4.0"]
@@ -48,9 +49,11 @@
   :migratus {:store :database :db ~(get (System/getenv) "DATABASE_URL")}
 
   :plugins [[lein-cprop "1.0.3"]
-            [migratus-lein "0.4.9"]
-            [lein-cljsbuild "1.1.5"]
-            [lein-uberwar "0.2.0"]]
+            [migratus-lein "0.5.2"]
+            [lein-cljsbuild "1.1.7"]
+            [lein-uberwar "0.2.0"]
+            [lein-ancient "0.6.12"]
+            ]
   :uberwar
   {:handler hpmanager.handler/app
    :init hpmanager.handler/init
@@ -100,10 +103,10 @@
                                  [directory-naming/naming-java "0.8"]
                                  [doo "0.1.7"]
                                  [figwheel-sidecar "0.5.10"]]
-                  :plugins      [[com.jakemccrary/lein-test-refresh "0.19.0"]
-                                 [lein-doo "0.1.7"]
-                                 [lein-figwheel "0.5.10"]
-                                 [org.clojure/clojurescript "1.9.562"]]
+                  :plugins      [[com.jakemccrary/lein-test-refresh "0.21.1"]
+                                 [lein-doo "0.1.8"]
+                                 [lein-figwheel "0.5.14"]
+                                 [org.clojure/clojurescript "1.9.946"]]
                   :cljsbuild
                   {:builds
                    {:app
