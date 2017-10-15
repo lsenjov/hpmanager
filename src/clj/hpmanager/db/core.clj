@@ -1,46 +1,64 @@
 (ns hpmanager.db.core
+  "The database does a couple of things:
+  - Serves static data
+  - Allows modification of static data
+  - Syncs characters "
   (:require
-    [clj-time.jdbc]
-    [clojure.java.jdbc :as jdbc]
-    [conman.core :as conman]
+    [clojure.spec.alpha :as s]
+    [codax.core :refer :all]
+    ;[clj-time.jdbc]
+    ;[clojure.java.jdbc :as jdbc]
+    ;[conman.core :as conman]
     [hpmanager.config :refer [env]]
     [mount.core :refer [defstate]]
     [crypto.password.bcrypt :as password])
-  (:import [java.sql
-            BatchUpdateException
-            PreparedStatement]))
+  )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Specs
+;; If it exists in our database, it has a uuid
+(s/def ::uuid (s/and string? #(= 36 (count %))))
 
 (defstate ^:dynamic *db*
-           :start (conman/connect! {:jdbc-url (env :database-url)})
-           :stop (conman/disconnect! *db*))
+  :start (open-database (env :database-filepath))
+  :stop (close-database *db*))
 
-;; This takes the queries and binds them to private functions
-(conman/bind-connection *db* "sql/queries.sql")
+(defn- gen-uuid
+  "Generates a random uuid"
+  []
+  (str (java.util.UUID/randomUUID)))
 
-(defn db-login-user
-  "Gets a user from the database with an id/password pair.
-  Returns the user if the password is correct, else returns nil"
-  [id pass]
-  (let [user (get-user {:id id})]
-    (if (password/check pass (:pass user))
-      (dissoc user :pass)
-      nil)))
+(defn- get-obj
+  "Gets an object type by uuid"
+  [t u]
+  (get-at *db* [t u]))
+(defn- set-obj!
+  "Sets/overwrites an object type by uuid.
+  If the object doesn't have a uuid, generates one"
+  [t {uuid ::uuid :as o}]
+  (if-not uuid
+    (recur t (assoc o ::uuid (gen-uuid)))
+    (assoc-at! *db* [t uuid] o)))
 
-(defn db-create-user!
-  "Creates a new user if not already existing.
-  Handles password hashing.
-  Returns the user (without the password field) if successful
-  Throws an exception if the user already exists, or some other difficulty occurs."
-  ;; TODO password complexity constraints
-  [{:keys [id first_name last_name email pass] :as user}]
-  (if-not pass
-    (throw (Exception. "User requires a password"))
-    (do
-      (create-user! (assoc user :pass (password/encrypt pass)))
-      (db-login-user id pass))))
+(defn get-character
+  "Gets a character from the database by uuid"
+  [uuid]
+  (get-obj ::characters uuid))
+(defn set-character!
+  "Overwrites a character in the database, or sets if doesn't exist"
+  [character]
+  (set-obj! ::characters character))
 
 (comment
-         (db-create-user! {:id "testId" :first_name "testFirst" :last_name "testLast" :email "test@test.com" :pass "testPass"})
-         (time (db-login-user "testId" "testPass"))
-         (time (db-login-user "testId" "testPassBad"))
-         )
+  (set-character! {:name "testchar"})
+  (assoc-at! *db* [:other-key] "other data")
+  (get-at! *db*)
+  (with-write-transaction [*db* tx]
+    ((apply comp (map #(fn [t] (dissoc-at t %))
+                     (map vector (keys (get-at tx)))))
+     tx))
+  (with-read-transaction [*db* tx]
+    (-> tx
+        (get-at [::characters])
+        keys))
+  )

@@ -1,36 +1,36 @@
 (ns hpmanager.test.db.core
   (:require [hpmanager.db.core :refer [*db*] :as db]
-            [luminus-migrations.core :as migrations]
+            ;[luminus-migrations.core :as migrations]
             [clojure.test :refer :all]
-            [clojure.java.jdbc :as jdbc]
+            ;[clojure.java.jdbc :as jdbc]
+            [codax.core :refer :all]
             [hpmanager.config :refer [env]]
             [mount.core :as mount]))
 
+(defn- clear-database
+  "Clears the database completely."
+  []
+  (with-write-transaction [db/*db* tx]
+    ((apply comp (map #(fn [t] (dissoc-at t %))
+                      (map vector (keys (get-at tx)))))
+     tx)))
+
+;; Mounts the database
 (use-fixtures
   :once
   (fn [f]
     (mount/start
       #'hpmanager.config/env
       #'hpmanager.db.core/*db*)
-    (migrations/migrate ["migrate"] (select-keys env [:database-url]))
+    (f)))
+;; Clears the database before each test
+(use-fixtures
+  :each
+  (fn [f]
+    (clear-database)
     (f)))
 
-(deftest test-users
-  (jdbc/with-db-transaction [t-conn *db*]
-    (jdbc/db-set-rollback-only! t-conn)
-    (is (= 1 (db/create-user!
-               t-conn
-               {:id         "1"
-                :first_name "Sam"
-                :last_name  "Smith"
-                :email      "sam.smith@example.com"
-                :pass       "pass"})))
-    (is (= {:id         "1"
-            :first_name "Sam"
-            :last_name  "Smith"
-            :email      "sam.smith@example.com"
-            :pass       "pass"
-            :admin      nil
-            :last_login nil
-            :is_active  nil}
-           (db/get-user t-conn {:id "1"})))))
+(deftest test-character-store
+  (let [c (db/set-character! {:name "TestName"})]
+    (is (= "TestName" (:name c)) "Should still have the same name")
+    (is (::db/uuid c) "Should have a uuid set")))

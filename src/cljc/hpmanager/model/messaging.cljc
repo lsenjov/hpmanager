@@ -13,8 +13,9 @@
 (s/def ::message
   (s/keys :req [::message-sender ::message-content ::message-recipients ::message-time-sent]))
 
+;; TODO should this be a list? When it gets long we'll be wanting things at the head, not the start
 (s/def ::queue
-  (s/and vector?
+  (s/and list?
          (s/coll-of ::message)))
 
 (s/def ::module
@@ -43,8 +44,7 @@
 (defn filter-messages
   "Filters the queue to only return messages meant for the recipient"
   ([m user n]
-   (update-in m [::queue] (comp vector
-                                (partial take n)
+   (update-in m [::queue] (comp (partial take n)
                                 (partial filter #((::message-recipients %) user)))))
   ([m user]
    (filter-messages m user 100)))

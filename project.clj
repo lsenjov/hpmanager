@@ -7,6 +7,7 @@
                  [clj-time "0.13.0"]
                  [cljs-ajax "0.6.0"]
                  [codax "1.0.2-SNAPSHOT"]
+                 [com.taoensso/sente "1.11.0"]
                  [compojure "1.6.0"]
                  [conman "0.6.4"]
                  [cprop "0.1.10"]
