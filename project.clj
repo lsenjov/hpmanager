@@ -8,6 +8,8 @@
                  [cljs-ajax "0.6.0"]
                  [codax "1.0.2-SNAPSHOT"]
                  [com.taoensso/sente "1.11.0"]
+                 [com.taoensso/timbre "4.8.0"]
+                 [com.taoensso/encore "2.88.0"]
                  [compojure "1.6.0"]
                  [conman "0.6.4"]
                  [cprop "0.1.10"]
@@ -22,7 +24,7 @@
                  [mount "0.1.11"]
                  [mysql/mysql-connector-java "6.0.5"]
                  [org.clojure/clojure "1.9.0-beta2"]
-                 [org.clojure/clojurescript "1.9.946" :scope "provided"]
+                 [org.clojure/clojurescript "1.9.908" :scope "provided"]
                  [org.clojure/tools.cli "0.3.5"]
                  [org.clojure/tools.logging "0.3.1"]
                  [org.webjars.bower/tether "1.4.0"]
@@ -107,7 +109,7 @@
                   :plugins      [[com.jakemccrary/lein-test-refresh "0.21.1"]
                                  [lein-doo "0.1.8"]
                                  [lein-figwheel "0.5.14"]
-                                 [org.clojure/clojurescript "1.9.946"]]
+                                 [org.clojure/clojurescript "1.9.908"]]
                   :cljsbuild
                   {:builds
                    {:app

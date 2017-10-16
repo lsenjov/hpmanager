@@ -8,7 +8,10 @@
             [ajax.core :refer [GET POST]]
             [hpmanager.ajax :refer [load-interceptors!]]
             [hpmanager.handlers]
-            [hpmanager.subscriptions])
+            [hpmanager.subscriptions]
+            [hpmanager.sockets :as socket]
+            [taoensso.timbre :as timbre :refer-macros (tracef debugf infof warnf errorf)]
+            )
   (:import goog.History))
 
 (defn nav-link [uri title page collapsed?]
@@ -41,6 +44,23 @@
   [:div.container
    (when-let [docs @(rf/subscribe [:docs])]
      [:div.row>div.col-sm-12
+      [:div.btn.btn-default
+       {:on-click #(do (infof "Pinging server.")
+                       (socket/chsk-send! [:util/ping {:ping "Ping!"}] 5000))}
+       "Ping!"]
+      [:div.btn.btn-default
+       {:on-click #(do (infof "Log in Admin")
+                       (socket/login "Admin" "TestPass"))}
+       "Login Admin"]
+      [:div.btn.btn-default
+       {:on-click #(do (infof "Log in Player1")
+                       (socket/login "Player1" "TestPass"))}
+       "Login Player1"]
+      [:div.btn.btn-default
+       {:on-click #(do (infof "Log in Player2")
+                       (socket/login "Player2" "TestPass"))}
+       "Login Player2"]
+      [:div.panel.panel-body (pr-str @socket/chsk-state)]
       [:div {:dangerouslySetInnerHTML
              {:__html (md->html docs)}}]])])
 

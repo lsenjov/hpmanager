@@ -2,6 +2,7 @@
   (:require [compojure.core :refer [routes wrap-routes]]
             [hpmanager.layout :refer [error-page]]
             [hpmanager.routes.home :refer [home-routes]]
+            [hpmanager.routes.sockets :refer [sockets-routes]]
             [compojure.route :as route]
             [hpmanager.env :refer [defaults]]
             [mount.core :as mount]
@@ -36,6 +37,7 @@
     (-> #'home-routes
         (wrap-routes middleware/wrap-csrf)
         (wrap-routes middleware/wrap-formats))
+    sockets-routes
     (route/not-found
       (:body
         (error-page {:status 404
