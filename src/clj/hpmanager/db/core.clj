@@ -11,7 +11,8 @@
     ;[conman.core :as conman]
     [hpmanager.config :refer [env]]
     [mount.core :refer [defstate]]
-    [crypto.password.bcrypt :as password])
+    [taoensso.timbre :as log]
+    [crypto.password.pbkdf2 :as crypto])
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -40,6 +41,8 @@
     (recur t (assoc o ::uuid (gen-uuid)))
     (assoc-at! *db* [t uuid] o)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Characters
 (defn get-character
   "Gets a character from the database by uuid"
   [uuid]
@@ -48,7 +51,6 @@
   "Overwrites a character in the database, or sets if doesn't exist"
   [character]
   (set-obj! ::characters character))
-
 (comment
   (set-character! {:name "testchar"})
   (assoc-at! *db* [:other-key] "other data")
@@ -61,4 +63,50 @@
     (-> tx
         (get-at [::characters])
         keys))
+  )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; User Management
+(defn get-user-data
+  "Returns userdata of a specific user, minus the password"
+  [uname]
+  (-> *db*
+      (get-at! [::users uname])
+      (dissoc ::password)))
+(defn login-user
+  "Return userdata iff the login is correct, else nil"
+  [uname password]
+  (if (and uname password) ; Return nil if not true
+    (if-let [u (get-at! *db* [::users uname])]
+      (do
+        (log/infof "Attempting login request for user: %s with password: %s" uname password)
+        (if (crypto/check password (::password u)) ; Return nil if not true
+          (dissoc u ::password))))))
+(defn create-user
+  "Return the username iff we've created a new user, else nil"
+  [uname password]
+  (let [ret (atom nil)]
+    (with-write-transaction [*db* tx]
+      (if-not (get-at tx [::users uname])
+        (do
+          (reset! ret uname)
+          (assoc-at tx [::users uname]
+                    {::password (crypto/encrypt password)
+                     ::uname uname}))
+        tx))
+    @ret))
+(comment
+  (get-at! *db*)
+  (dissoc-at! *db* ::users)
+  (create-user "Admin" "TestPass")
+  (create-user "Player1" "TestPass")
+  (create-user "Player2" "TestPass")
+  (login-user "Admin" "TestPass")
+  (login-user "Admin" "WrongPass")
+  )
+
+
+
+(comment
+  (mount.core/start #'*db*)
   )

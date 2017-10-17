@@ -93,6 +93,7 @@
 (defn start! [] (start-router!))
 (defonce _start-once (start!))
 
+;(apply merge {} (map vec (partition 2 [:a :b :c :d])))
 ;;;; Begin userspace functions here
 (defn login
   [user-id password]
@@ -101,11 +102,12 @@
                    {:method :post
                     :headers {:X-CSRF-Token (:csrf-token @chsk-state)}
                     :params {:user-id (str user-id)
-                             :password (str password)}}
-                   (fn [ajax-resp]
+                             :password (str password)}
+                    :resp-type :edn}
+                   (fn [{:keys [success? ?status ?error ?content ?content-type] :as ajax-resp}]
                      (->output! "Ajax login response: %s" ajax-resp)
-                     (let [success? true] ; TODO logic
-                       (if-not success?
+                     (let [login-success? (get-in ajax-resp [:?content :uid])] ; TODO figure out the server isn't returning this
+                       (if-not login-success?
                          (->output! "Login failed")
                          (do
                            (->output! "Login Successful")

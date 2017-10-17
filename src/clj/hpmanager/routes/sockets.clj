@@ -6,6 +6,7 @@
             [clojure.java.io :as io]
             [clojure.tools.logging :as log]
             [hpmanager.config :refer [env]]
+            [hpmanager.db.core :as db]
             [mount.core :as mount]
             [taoensso.sente :as sente]
             ;[taoensso.sente.server-adapters.immutant      :refer (get-sch-adapter)]
@@ -58,17 +59,24 @@
 (add-watch connected-uids ::connected-uids
            (fn [_ _ old new]
              (when (not= old new)
-               (log/debugf "Connected uids changed: %s" (diff-set (:any old) (:any new))))))
+               (log/debugf "Connected uids changed: %s, currently connected: %s" (diff-set (:any old) (:any new)) (:any new)))))
 
-(defn login-handler ;TODO farm off to different process
-  "Here's where you'll add your server-side login/auth procedure (Friend, etc.).
-  In our simplified example we'll just always successfully authenticate the user
-  with whatever user-id they provided in the auth request."
+(defn login-handler
+  "Test that a user's key-val pair are correct."
   [ring-req]
   (let [{:keys [session params]} ring-req
-        {:keys [user-id]} params]
-    (log/debugf "Login request: %s" params)
-    {:status 200 :session (assoc session :uid user-id)}))
+        {:keys [user-id password]} params]
+    (log/debugf "Login request from user: %s" user-id)
+    (log/tracef "Login request in full: %s" ring-req)
+    (if-let [u (db/login-user user-id password)]
+      {:status 200
+       :body (pr-str {:uid user-id})
+       :resp-type :edn
+       :session (assoc session :uid user-id)}
+      {:status 200
+       :body (pr-str {:error "Invalid Username or Password"})
+       :resp-type :edn
+       :session session})))
 
 (defroutes sockets-routes-inner
   (GET  "/chsk" req (ring-ajax-get-or-ws-handshake req))
