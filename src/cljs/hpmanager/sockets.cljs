@@ -4,8 +4,9 @@
     [clojure.string :as str]
     [cljs.core.async :as async  :refer (<! >! put! chan)]
     [taoensso.encore :as encore :refer-macros (have have?)]
-    [taoensso.timbre :as timbre :refer-macros (tracef debugf infof warnf errorf)]
+    [taoensso.timbre :as log :refer-macros (tracef debugf infof warnf errorf)]
     [taoensso.sente  :as sente  :refer (cb-success?)]
+    [re-frame.core :as rf :refer [dispatch reg-event-db]]
 
     ;; Optional, for Transit encoding:
     [taoensso.sente.packers.transit :as sente-transit])
@@ -18,7 +19,7 @@
 (def output-el (.getElementById js/document "output"))
 (defn ->output! [fmt & args]
   (let [msg (apply encore/format fmt args)]
-    (timbre/info msg)
+    (log/info msg)
     ;(aset output-el "value" (str "• " (.-value output-el) "\n" msg))
     ;(aset output-el "scrollTop" (.-scrollHeight output-el))
     ))
@@ -93,9 +94,10 @@
 (defn start! [] (start-router!))
 (defonce _start-once (start!))
 
-;(apply merge {} (map vec (partition 2 [:a :b :c :d])))
 ;;;; Begin userspace functions here
-(defn login
+(defn login!
+  "Logs the user in. Re-connects the websocket if valid.
+  Returns true on success, else false."
   [user-id password]
   (->output! "Logging in with user-id %s" user-id)
   (sente/ajax-lite "/login"
@@ -106,9 +108,15 @@
                     :resp-type :edn}
                    (fn [{:keys [success? ?status ?error ?content ?content-type] :as ajax-resp}]
                      (->output! "Ajax login response: %s" ajax-resp)
-                     (let [login-success? (get-in ajax-resp [:?content :uid])] ; TODO figure out the server isn't returning this
+                     (let [login-success? (get-in ajax-resp [:?content :uid])]
+                       (dispatch [::set-login-status login-success?])
                        (if-not login-success?
                          (->output! "Login failed")
                          (do
                            (->output! "Login Successful")
                            (sente/chsk-reconnect! chsk)))))))
+
+(reg-event-db
+  ::set-login-status
+  (fn [db [_ status]]
+    (assoc-in db [:login :logged-in?] status)))

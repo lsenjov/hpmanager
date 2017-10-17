@@ -10,3 +10,8 @@
   :docs
   (fn [db _]
     (:docs db)))
+
+(reg-sub
+  :login
+  (fn [db _]
+    (:login db)))
