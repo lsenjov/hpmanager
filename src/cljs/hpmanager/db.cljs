@@ -4,5 +4,5 @@
   {:page :home
    :login {:uname ""
            :pass ""
-           :logged-in? false}
+           :status nil}
    })

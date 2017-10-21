@@ -15,3 +15,13 @@
   :login
   (fn [db _]
     (:login db)))
+
+(reg-sub
+  :login-status
+  (fn [db _]
+    (get-in db [:login :status])))
+
+(reg-sub
+  :debug
+  (fn [db _]
+    (dissoc db :docs)))

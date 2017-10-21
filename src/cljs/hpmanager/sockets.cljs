@@ -108,7 +108,7 @@
                     :resp-type :edn}
                    (fn [{:keys [success? ?status ?error ?content ?content-type] :as ajax-resp}]
                      (->output! "Ajax login response: %s" ajax-resp)
-                     (let [login-success? (get-in ajax-resp [:?content :uid])]
+                     (let [login-success? (get-in ajax-resp [:?content])]
                        (dispatch [::set-login-status login-success?])
                        (if-not login-success?
                          (->output! "Login failed")
@@ -119,4 +119,4 @@
 (reg-event-db
   ::set-login-status
   (fn [db [_ status]]
-    (assoc-in db [:login :logged-in?] status)))
+    (assoc-in db [:login :status] status)))

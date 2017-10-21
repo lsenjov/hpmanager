@@ -13,6 +13,7 @@
             [taoensso.timbre :as timbre :refer-macros (tracef debugf infof warnf errorf)]
 
             [hpmanager.components.shared :as cs]
+            [hpmanager.components.chat :as chat]
             [hpmanager.components.login :as login]
             )
   (:import goog.History))
@@ -25,6 +26,16 @@
       {:href uri
        :on-click #(reset! collapsed? true)} title]]))
 
+(defn- display-name []
+  (let [login-atom (rf/subscribe [:login-status])]
+    (fn []
+      [:span
+      (if (:uid @login-atom)
+        (str "Welcome Citizen " (:uid @login-atom))
+        "Not logged in.")
+      [cs/debug-display]
+      ])))
+
 (defn navbar []
   (r/with-let [collapsed? (r/atom true)]
     [:nav.navbar.navbar-dark.bg-primary
@@ -35,7 +46,8 @@
       [:a.navbar-brand {:href "#/"} "hpmanager"]
       [:ul.nav.navbar-nav
        [nav-link "#/" "Home" :home collapsed?]
-       [nav-link "#/about" "About" :about collapsed?]]]]))
+       [nav-link "#/about" "About" :about collapsed?]]]
+     [display-name]]))
 
 (defn about-page []
   [:div.container
@@ -49,8 +61,6 @@
      [:div.row>div.col-sm-12
       (cs/button #(socket/chsk-send! [:util/ping {:ping "Ping!"}] 5000) "Ping!")
       [login/login-component]
-      [cs/collapsable "TestItem:"
-                      [:div "Testing"]]
       [cs/collapsable "Document:"
                       [:div {:dangerouslySetInnerHTML
                              {:__html (md->html docs)}}]]])])

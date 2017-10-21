@@ -12,7 +12,9 @@
     [hpmanager.config :refer [env]]
     [mount.core :refer [defstate]]
     [taoensso.timbre :as log]
-    [crypto.password.pbkdf2 :as crypto])
+    [crypto.password.pbkdf2 :as crypto]
+
+    [hpmanager.model.users :as users])
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -72,7 +74,7 @@
   [uname]
   (-> *db*
       (get-at! [::users uname])
-      (dissoc ::password)))
+      (dissoc ::users/password)))
 (defn login-user
   "Return userdata iff the login is correct, else nil"
   [uname password]
@@ -80,19 +82,18 @@
     (if-let [u (get-at! *db* [::users uname])]
       (do
         (log/infof "Attempting login request for user: %s with password: %s" uname password)
-        (if (crypto/check password (::password u)) ; Return nil if not true
-          (dissoc u ::password))))))
+        (if (crypto/check password (::users/password u)) ; Return nil if not true
+          (dissoc u ::users/password))))))
 (defn create-user
   "Return the username iff we've created a new user, else nil"
   [uname password]
-  (let [ret (atom nil)]
+  (let [user (users/construct-user uname (crypto/encrypt password))
+        ret (atom nil)]
     (with-write-transaction [*db* tx]
       (if-not (get-at tx [::users uname])
         (do
           (reset! ret uname)
-          (assoc-at tx [::users uname]
-                    {::password (crypto/encrypt password)
-                     ::uname uname}))
+          (assoc-at tx [::users uname] user))
         tx))
     @ret))
 (comment
