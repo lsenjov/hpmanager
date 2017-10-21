@@ -129,7 +129,8 @@
 (defmethod -event-msg-handler
   ::mes/send
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-  (if ?data
+  (if (and (string? (::mes/message-content ?data))
+           (pos? (count (::mes/message-content ?data))))
     (let [message (assoc ?data ::mes/message-time-sent
                          (.getTimeInMillis (java.util.Calendar/getInstance)))]
       (log/infof "Got a message: %s" message)
