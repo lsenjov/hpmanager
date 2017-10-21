@@ -12,6 +12,9 @@
             ;[taoensso.sente.server-adapters.immutant      :refer (get-sch-adapter)]
             [taoensso.sente.server-adapters.http-kit      :refer (get-sch-adapter)]
             [taoensso.sente.packers.transit :as sente-transit]
+
+            [hpmanager.state :refer [global-state]]
+            [hpmanager.model.messaging :as mes]
             ))
 
 (let [{:keys [ch-recv send-fn connected-uids
@@ -123,6 +126,17 @@
             (?reply-fn {:util/pong "Pong!"}))
         (do (log/info "Using send")
             (send-fn uid [:util/pong "Pong!"]))))))
+(defmethod -event-msg-handler
+  ::mes/send
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (if ?data
+    (let [message (assoc ?data ::mes/message-time-sent
+                         (.getTimeInMillis (java.util.Calendar/getInstance)))]
+      (log/infof "Got a message: %s" message)
+      (swap! global-state mes/add-message message)
+      (doseq [uid (:any @connected-uids)]
+        (chsk-send! uid [::mes/recv message])))
+    (log/errorf "Apparently received a message, but didn't actually have any data on it")))
 
 ;;;; Sente event router (our `event-msg-handler` loop)
 

@@ -35,14 +35,19 @@
   (s/keys :req [::chats]))
 
 (defn construct-message
-  [chat-id sender recipients content time-sent]
-  {::chat-id chat-id
-   ::message-sender sender
-   ::message-recipients recipients
-   ::message-content content
-   ::message-time-sent time-sent})
+  ([chat-id sender recipients content time-sent]
+   {::chat-id chat-id
+    ::message-sender sender
+    ::message-recipients recipients
+    ::message-content content
+    ::message-time-sent time-sent})
+  ([chat-id sender recipients content]
+   {::chat-id chat-id
+    ::message-sender sender
+    ::message-recipients recipients
+    ::message-content content}))
 (s/fdef construct-message
-        :args (s/cat 
+        :args (s/cat ;; TODO update spec for 4 args
                 :chat-id ::chat-id
                 :sender ::message-sender
                 :recipients ::message-recipients
@@ -55,7 +60,8 @@
   (-> m
       (update-in [::module ::chats chat-id ::queue] conj message)
       ;; Is a set, so we add the conversation to the chat
-      (update-in [::module ::chats chat-id ::all-message-recipients] conj message-recipients)))
+      (update-in [::module ::chats chat-id ::all-message-recipients]
+                 (comp set #(conj % message-recipients))))) ; TODO remove set when we *know* it will be a set
 (s/fdef add-message
         :args (s/cat :m ::module
                      :message ::message))
@@ -70,8 +76,8 @@
 
 (defn format-message
   "Formats a single message into a nicely readable string"
-  [{:as message ::keys [sender content time-sent]}]
-  (str \[ time-sent \] \space sender ": " content))
+  [{:as message ::keys [message-sender message-content message-time-sent]}]
+  (str \: message-time-sent \: \space message-sender ": " message-content))
 (s/fdef format-message
         :args ::message)
 
@@ -117,6 +123,13 @@
 (s/fdef filter-recipients
         :args ::queue
         :ret ::queue)
+(defn get-messages
+  ([m chat-id user-set n]
+   (if (= :everyone user-set)
+     (take n (get-in m [::module ::chats chat-id ::queue]))
+     (take n (filter-recipients (get-in m [::module ::chats chat-id ::queue]) user-set))))
+  ([m chat-id user-set]
+   (get-messages m chat-id user-set 50)))
 
 (comment
   (group-by first [[:a 1] [:b 2] [:b 3] [:c 4] [:a 5]])

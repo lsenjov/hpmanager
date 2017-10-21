@@ -9,28 +9,55 @@
     )
   )
 
+(def global-chat-channel "global")
 (defn chat-page
   "A single page for a single chat"
   [chat-id user-set]
-  (let [c (rf/subscribe [::chat-page chat-id user-set])]
+  (let [c (rf/subscribe [::chat-page chat-id user-set 20])
+        u (rf/subscribe [:login-status])]
     (fn []
-      [:div.tab-pane.fade.active.in
-       ;; Display messages
-       (->> @c
-            (map mes/format-message)
-            (interpose [:br]))
-       ;; TODO chat bar
-       ])))
+      [:div
+       [:div.tab-pane.fade.active.in
+        ;; Display messages
+        (->> @c
+             (map (fn [m] ^{:key m} [:div (mes/format-message m)]))
+             (reverse))
+        ;; TODO chat bar
+        ]
+       [:div.btn.btn-default {:on-click #(rf/dispatch
+                                           [::send-message
+                                            (mes/construct-message global-chat-channel
+                                                                   (:uid @u)
+                                                                   :everyone
+                                                                   (str "Test Message" (rand)))])}
+        "DEBUG add message"]]
+       )))
 (defn single-chat-component
   "A single chat window that shows all messages"
-  []
-  (let [c (rf/subscribe [::chat-page-all])]
+  [chat-id]
+  (let [c (rf/subscribe [::chat-page chat-id :everyone])]
     (fn []
-      (-> @c
-          (take 50)
-          (map mes/format-message)
-          (reverse)
-          (interpose [:br])))))
+      (->> @c
+           (take 20)
+           (map mes/format-message)
+           (reverse)
+           (interpose [:br])))))
+
+(rf/reg-sub
+  ::chat-page
+  (fn [db [_ chat-id user-set ?n]]
+    (if ?n
+      (mes/get-messages db chat-id user-set ?n)
+      (mes/get-messages db chat-id user-set))))
+(rf/reg-event-db
+  ::send-message
+  (fn [db [_ message]]
+    (sockets/chsk-send! [::mes/send message])
+    db))
+(rf/reg-event-db
+  ::mes/recv
+  (fn [db [_ message]]
+    (mes/add-message db message)))
 (comment
 ; (defn chat-component
 ;   [chat-id]

@@ -61,6 +61,7 @@
      [:div.row>div.col-sm-12
       (cs/button #(socket/chsk-send! [:util/ping {:ping "Ping!"}] 5000) "Ping!")
       [login/login-component]
+      [cs/collapsable "Chat" [chat/chat-page chat/global-chat-channel :everyone]]
       [cs/collapsable "Document:"
                       [:div {:dangerouslySetInnerHTML
                              {:__html (md->html docs)}}]]])])
