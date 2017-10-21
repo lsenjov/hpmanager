@@ -77,7 +77,8 @@
 (defn format-message
   "Formats a single message into a nicely readable string"
   [{:as message ::keys [message-sender message-content message-time-sent]}]
-  (str \: message-time-sent \: \space message-sender ": " message-content))
+  (str \| "214-" (mod (quot message-time-sent 1000) 3153600) ; 3153600 seconds in a year
+       \| \space message-sender ": " message-content))
 (s/fdef format-message
         :args ::message)
 

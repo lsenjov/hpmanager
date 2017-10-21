@@ -33,7 +33,6 @@
       (if (:uid @login-atom)
         (str "Welcome Citizen " (:uid @login-atom))
         "Not logged in.")
-      [cs/debug-display]
       ])))
 
 (defn navbar []

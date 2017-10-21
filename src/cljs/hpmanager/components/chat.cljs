@@ -6,6 +6,7 @@
     [reagent.core :as r]
     [hpmanager.sockets :as sockets]
     [hpmanager.model.messaging :as mes]
+    [hpmanager.components.shared :as cs]
     )
   )
 
@@ -17,25 +18,32 @@
         u (rf/subscribe [:login-status])
         t (r/atom "")]
     (fn []
+      (let [dispatch-fn #(do (rf/dispatch
+                               [::send-message
+                                (mes/construct-message global-chat-channel
+                                                       (:uid @u)
+                                                       :everyone
+                                                       @t)])
+                             (reset! t "")
+                             (.preventDefault %) ;; Stop it from actually going anywhere
+                             js/false)]
       [:div
        [:div.tab-pane.fade.active.in
         ;; Display messages
         (->> @c
              (map (fn [m] ^{:key m} [:div (mes/format-message m)]))
              (reverse))
-        [:div>input {:type "text"
-                     :value @t
-                     :on-change #(reset! t (-> % .-target .-value))}]
+        [:form {:onSubmit dispatch-fn}
+         [:div>input.form-control
+          {:type "text"
+           :value @t
+           :on-change #(reset! t (apply str (take 140 (-> % .-target .-value))))
+           :placeholder "Type message, press enter to send"}]
+         ]
         ]
-       [:div.btn.btn-default {:on-click #(do (rf/dispatch
-                                               [::send-message
-                                                (mes/construct-message global-chat-channel
-                                                                       (:uid @u)
-                                                                       :everyone
-                                                                       @t)])
-                                             (reset! t ""))}
-        "DEBUG add message"]]
-       )))
+       [cs/button dispatch-fn
+        "Send Message"]] ;; TODO send on enter
+       ))))
 (defn single-chat-component
   "A single chat window that shows all messages"
   [chat-id]

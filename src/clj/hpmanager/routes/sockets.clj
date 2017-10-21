@@ -126,10 +126,13 @@
             (?reply-fn {:util/pong "Pong!"}))
         (do (log/info "Using send")
             (send-fn uid [:util/pong "Pong!"]))))))
+
 (defmethod -event-msg-handler
   ::mes/send
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (if (and (string? (::mes/message-content ?data))
+           (pos? (count (::mes/message-content ?data)))
+           (string? (::mes/message-sender ?data))
            (pos? (count (::mes/message-content ?data))))
     (let [message (assoc ?data ::mes/message-time-sent
                          (.getTimeInMillis (java.util.Calendar/getInstance)))]
@@ -137,7 +140,7 @@
       (swap! global-state mes/add-message message)
       (doseq [uid (:any @connected-uids)]
         (chsk-send! uid [::mes/recv message])))
-    (log/errorf "Apparently received a message, but didn't actually have any data on it")))
+    (log/errorf "Received a message, invalid form: %s" ?data)))
 
 ;;;; Sente event router (our `event-msg-handler` loop)
 
