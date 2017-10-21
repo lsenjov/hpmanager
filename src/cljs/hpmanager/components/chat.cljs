@@ -14,7 +14,8 @@
   "A single page for a single chat"
   [chat-id user-set]
   (let [c (rf/subscribe [::chat-page chat-id user-set 20])
-        u (rf/subscribe [:login-status])]
+        u (rf/subscribe [:login-status])
+        t (r/atom "")]
     (fn []
       [:div
        [:div.tab-pane.fade.active.in
@@ -22,14 +23,17 @@
         (->> @c
              (map (fn [m] ^{:key m} [:div (mes/format-message m)]))
              (reverse))
-        ;; TODO chat bar
+        [:div>input {:type "text"
+                     :value @t
+                     :on-change #(reset! t (-> % .-target .-value))}]
         ]
-       [:div.btn.btn-default {:on-click #(rf/dispatch
-                                           [::send-message
-                                            (mes/construct-message global-chat-channel
-                                                                   (:uid @u)
-                                                                   :everyone
-                                                                   (str "Test Message" (rand)))])}
+       [:div.btn.btn-default {:on-click #(do (rf/dispatch
+                                               [::send-message
+                                                (mes/construct-message global-chat-channel
+                                                                       (:uid @u)
+                                                                       :everyone
+                                                                       @t)])
+                                             (reset! t ""))}
         "DEBUG add message"]]
        )))
 (defn single-chat-component
