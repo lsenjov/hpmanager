@@ -9,12 +9,6 @@
 
 (def button-size (atom "btn-sm"))
 
-(defn debug-display
-  "Displays the *entire* db map. Should be removed during debugging."
-  []
-  (let [debug-atom (rf/subscribe [:debug])]
-    [:span (pr-str @debug-atom)]))
-
 (defn button
   "Creates a button, re-sizes if button-size is changed"
   ([?state-map ?on-click-fn text]
@@ -64,6 +58,17 @@
         ;; Look up the switch. If we haven't picked anything, return an empty div
         [(get m @sw :div)]])))
     
+(defn debug-display
+  "Displays the *entire* db map. Should be removed during debugging."
+  []
+  (let [debug-atom (rf/subscribe [:debug])]
+    [:div.component
+     [:div
+     (map (fn [[k v]] ^{:key k} [collapsable k (pr-str v)]) @debug-atom)]
+     [collapsable "Keys:" (interpose [:br] (keys @debug-atom))]
+     [collapsable "Entire db:" (pr-str @debug-atom)]
+     ]))
+
 
 (rf/reg-sub
   ::collapsed

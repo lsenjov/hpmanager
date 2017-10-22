@@ -131,7 +131,7 @@
   (fn [db [_ status]]
     (-> db
         (assoc-in [:login :status] status)
-        (assoc db :page :chat))))
+        (assoc :page :chat))))
 (reg-event-db
   :logout
   (fn [db [_ status]]

@@ -44,12 +44,13 @@
           [:a.navbar-brand {:href "#/"} "HPManager"]
           [:ul.nav.navbar-nav
            [nav-link "#/" "Login" :home]
-           (:uid @login-atom)]]
+           [nav-link "#/debug" "Debug" :debug]
+           ]]
          [:div.collapse.navbar-toggleable-xs
-          [:a.navbar-brand {:href "#/"} "hpmanager"]
+          [:a.navbar-brand {:href "#/chat"} "HPManager"]
           [:ul.nav.navbar-nav
-           [nav-link "#/" "Login" :home]
            [nav-link "#/chat" "Chat" :about]
+           [nav-link "#/debug" "Debug" :debug]
            [:li.nav-item>a.nav-link {:href "#/"
                                      :onClick #(rf/dispatch [:logout])}
             "Logout " (:uid @login-atom)]]])])))
@@ -68,6 +69,10 @@
   [:div.container
    [login/login-component]])
 
+(defn debug-page []
+  [:div.container
+   [cs/debug-display]])
+
 (defn home-page []
   [:div.container
    (when-let [docs @(rf/subscribe [:docs])]
@@ -82,6 +87,7 @@
 (def pages
   {:home #'login-page
    :chat #'global-chat-page
+   :debug #'debug-page
    :about #'about-page})
 
 (defn page []
@@ -97,6 +103,8 @@
   (rf/dispatch [:set-active-page :home]))
 (secretary/defroute "/chat" []
   (rf/dispatch [:set-active-page :chat]))
+(secretary/defroute "/debug" []
+  (rf/dispatch [:set-active-page :debug]))
 
 (secretary/defroute "/about" []
   (rf/dispatch [:set-active-page :about]))
@@ -124,6 +132,6 @@
 (defn init! []
   (rf/dispatch-sync [:initialize-db])
   (load-interceptors!)
-  (fetch-docs!)
+  ;(fetch-docs!)
   (hook-browser-navigation!)
   (mount-components))
