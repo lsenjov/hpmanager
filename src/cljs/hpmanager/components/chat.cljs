@@ -10,7 +10,7 @@
     )
   )
 
-(def global-chat-channel "global")
+(def global-chat-channel mes/global-chat-channel)
 (defn chat-page
   "A single page for a single chat"
   [chat-id user-set]
@@ -20,7 +20,7 @@
     (fn []
       (let [dispatch-fn #(do (rf/dispatch
                                [::send-message
-                                (mes/construct-message global-chat-channel
+                                (mes/construct-message chat-id
                                                        (:uid @u)
                                                        :everyone
                                                        @t)])
@@ -28,11 +28,16 @@
                              (.preventDefault %) ;; Stop it from actually going anywhere
                              js/false)]
       [:div
-       [:div.tab-pane.fade.active.in
+       [:div.tab-pane
+        [:div "Recipients: "
+         (if (= :everyone user-set)
+           "Everyone"
+           (->> user-set (interpose ", ")))]
         ;; Display messages
-        (->> @c
-             (map (fn [m] ^{:key m} [:div (mes/format-message m)]))
-             (reverse))
+        [:div
+         (->> @c
+              (map (fn [m] ^{:key m} [:div (mes/format-message m)]))
+              (reverse))]
         [:form {:onSubmit dispatch-fn}
          [:div>input.form-control
           {:type "text"
@@ -44,6 +49,25 @@
        [cs/button dispatch-fn
         "Send Message"]] ;; TODO send on enter
        ))))
+(defn chat-tab
+  [chat-id recipients]
+  (let [sw (rf/subscribe [::cs/tab-switch chat-id recipients])]
+    (fn []
+      [(if (= recipients @sw) :li.active :li)
+       [chat-page chat-id recipients]])))
+(defn full-chat-page
+  "A tabbed page for a single chat id"
+  [chat-id]
+  (let [c (rf/subscribe [::chat-categories chat-id])]
+    (fn []
+      (log/infof "full-chat-page. chat-id: %s c: %s" chat-id @c)
+      [cs/tabbed
+       chat-id
+       (reduce merge {}
+               (map (fn [recipients]
+                      ^{:key recipients}
+                      {recipients (partial chat-page chat-id recipients)})
+                    (conj @c :everyone)))])))
 (defn single-chat-component
   "A single chat window that shows all messages"
   [chat-id]
@@ -55,12 +79,21 @@
            (reverse)
            (interpose [:br])))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Subscriptions
 (rf/reg-sub
   ::chat-page
   (fn [db [_ chat-id user-set ?n]]
     (if ?n
       (mes/get-messages db chat-id user-set ?n)
       (mes/get-messages db chat-id user-set))))
+(rf/reg-sub
+  ;; Returns the different chat categories from a chat
+  ::chat-categories
+  (fn [db [_ chat-id]]
+    (mes/get-categories db chat-id)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Events
 (rf/reg-event-db
   ::send-message
   (fn [db [_ message]]
@@ -70,11 +103,16 @@
   ::mes/recv
   (fn [db [_ message]]
     (mes/add-message db message)))
+(rf/reg-event-db
+  ::mes/refresh
+  (fn [db [_ chats]]
+    (log/infof "Received refresh data: %s" chats)
+    (let [refresh-fn (->> chats
+                          (map (fn [chat] (log/infof "Chat is: %s" chat) (fn [m] (mes/refresh-chat m chat))))
+                          (apply comp)
+                          )]
+      (refresh-fn db)
+      )))
+
 (comment
-; (defn chat-component
-;   [chat-id]
-;   (let [c (rf/subscribe [::chat chat-id])]
-;     (fn []
-;       [:div.nav.nav-tabs
-;        (map (fn [user-set] [li.
-)
+  )

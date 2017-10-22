@@ -18,4 +18,3 @@
   :set-docs
   (fn [db [_ docs]]
     (assoc db :docs docs)))
-

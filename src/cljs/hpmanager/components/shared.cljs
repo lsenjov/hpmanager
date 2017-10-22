@@ -40,6 +40,31 @@
      (if-not @collapsed? (apply vector :div.panel-body body-items))
      ])))
 
+(defn- list-to-map
+  [l]
+  (reduce merge {} (map vec (partition 2 l))))
+(defn tabbed
+  "Creates a tabbed window."
+  [unique-id title-to-component-coll]
+  (log/infof "Rendering tabbed component: %s" unique-id)
+  (let [sw (rf/subscribe [::tab-switch unique-id])
+        m (if (map? title-to-component-coll)
+            title-to-component-coll
+            (list-to-map title-to-component-coll))]
+    (fn []
+      (log/infof "Beginning render loop of tabbed component")
+      (log/infof "sw is: %s, m keys are: %s" @sw (keys m))
+      [:div
+       [:ul.nav.nav-tabs
+        (map (fn [[k _]]
+               [:ul {:onClick #(rf/dispatch [::tab-switch unique-id k])
+                     :class (if (= @sw k) "active" "")}
+                k])
+             m)]
+        ;; Look up the switch. If we haven't picked anything, return an empty div
+        [(get m @sw :div)]])))
+    
+
 (rf/reg-sub
   ::collapsed
   (fn [db [_ kw]]
@@ -49,3 +74,12 @@
   ::toggle-maximised
   (fn [db [_ kw]]
     (update-in db [::collapsed kw] not)))
+
+(rf/reg-sub
+  ::tab-switch
+  (fn [db [_ kw]]
+    (get-in db [::tab-switch kw])))
+(rf/reg-event-db
+  ::tab-switch
+  (fn [db [_ kw sw]]
+    (assoc-in db [::tab-switch kw] sw)))

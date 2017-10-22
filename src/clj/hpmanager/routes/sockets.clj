@@ -13,7 +13,6 @@
             [taoensso.sente.server-adapters.http-kit      :refer (get-sch-adapter)]
             [taoensso.sente.packers.transit :as sente-transit]
 
-            [hpmanager.state :refer [global-state]]
             [hpmanager.model.messaging :as mes]
             ))
 
@@ -21,11 +20,11 @@
               ajax-post-fn ajax-get-or-ws-handshake-fn]}
       (sente/make-channel-socket! (get-sch-adapter)
                                   {:packer :edn})]
-  (def ring-ajax-post                ajax-post-fn)
-  (def ring-ajax-get-or-ws-handshake ajax-get-or-ws-handshake-fn)
-  (def ch-chsk                       ch-recv) ; ChannelSocket's receive channel
-  (def chsk-send!                    send-fn) ; ChannelSocket's send API fn
-  (def connected-uids                connected-uids) ; Watchable, read-only atom
+  (defonce ring-ajax-post                ajax-post-fn)
+  (defonce ring-ajax-get-or-ws-handshake ajax-get-or-ws-handshake-fn)
+  (defonce ch-chsk                       ch-recv) ; ChannelSocket's receive channel
+  (defonce chsk-send!                    send-fn) ; ChannelSocket's send API fn
+  (defonce connected-uids                connected-uids) ; Watchable, read-only atom
   )
 
 (comment
@@ -112,10 +111,6 @@
     (when ?reply-fn
       (?reply-fn {:umatched-event-as-echoed-from-from-server event}))))
 (defmethod -event-msg-handler
-  :chsk/ws-ping ; We ignore pings
-  [_]
-  nil)
-(defmethod -event-msg-handler
   :util/ping ; Echos whatever was sent, back
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (do
@@ -126,21 +121,17 @@
             (?reply-fn {:util/pong "Pong!"}))
         (do (log/info "Using send")
             (send-fn uid [:util/pong "Pong!"]))))))
-
 (defmethod -event-msg-handler
-  ::mes/send
-  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-  (if (and (string? (::mes/message-content ?data))
-           (pos? (count (::mes/message-content ?data)))
-           (string? (::mes/message-sender ?data))
-           (pos? (count (::mes/message-content ?data))))
-    (let [message (assoc ?data ::mes/message-time-sent
-                         (.getTimeInMillis (java.util.Calendar/getInstance)))]
-      (log/infof "Got a message: %s" message)
-      (swap! global-state mes/add-message message)
-      (doseq [uid (:any @connected-uids)]
-        (chsk-send! uid [::mes/recv message])))
-    (log/errorf "Received a message, invalid form: %s" ?data)))
+  :chsk/ws-ping
+  ; Do nothing with pings
+  [_]
+  nil)
+;; TODO
+;(defmethod -event-msg-handler
+;  ;; Get everyone online who's in a channel
+;  ::mes/get-online
+;  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+; nil)
 
 ;;;; Sente event router (our `event-msg-handler` loop)
 

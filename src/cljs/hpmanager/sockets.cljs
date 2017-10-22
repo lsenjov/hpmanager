@@ -77,14 +77,17 @@
   (when ?data
     (rf/dispatch ?data)))
 
+;; When we've reconnected
 (defmethod -event-msg-handler :chsk/handshake
   [{:as ev-msg :keys [?data]}]
   (let [[?uid ?csrf-token ?handshake-data] ?data]
-    (->output! "Handshake: %s" ?data)))
+    (->output! "Handshake: %s" ?data))
+  (rf/dispatch [:refresh :all]))
 
 (rf/reg-event-db
   :chsk/ws-ping
   (fn [db _]
+    (log/tracef "ws-ping from server")
     db))
 
 ;; TODO Add your (defmethod -event-msg-handler <event-id> [ev-msg] <body>)s here...
@@ -126,4 +129,18 @@
 (reg-event-db
   ::set-login-status
   (fn [db [_ status]]
-    (assoc-in db [:login :status] status)))
+    (-> db
+        (assoc-in [:login :status] status)
+        (assoc db :page :chat))))
+(reg-event-db
+  :logout
+  (fn [db [_ status]]
+    (-> db
+        (assoc-in [:login :status] nil)
+        (assoc :page :home))))
+(reg-event-db
+  :refresh
+  (fn [db [_ request]]
+    (log/debugf "Requesting full refresh from server.")
+    (chsk-send! [:state/refresh request])
+    db))

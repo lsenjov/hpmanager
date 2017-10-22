@@ -18,13 +18,13 @@
             )
   (:import goog.History))
 
-(defn nav-link [uri title page collapsed?]
+(defn nav-link [uri title page]
   (let [selected-page (rf/subscribe [:page])]
     [:li.nav-item
      {:class (when (= page @selected-page) "active")}
      [:a.nav-link
-      {:href uri
-       :on-click #(reset! collapsed? true)} title]]))
+      {:href uri}
+      title]]))
 
 (defn- display-name []
   (let [login-atom (rf/subscribe [:login-status])]
@@ -36,17 +36,23 @@
       ])))
 
 (defn navbar []
-  (r/with-let [collapsed? (r/atom true)]
-    [:nav.navbar.navbar-dark.bg-primary
-     [:button.navbar-toggler.hidden-sm-up
-      {:on-click #(swap! collapsed? not)} "☰"]
-     [:div.collapse.navbar-toggleable-xs
-      (when-not @collapsed? {:class "in"})
-      [:a.navbar-brand {:href "#/"} "hpmanager"]
-      [:ul.nav.navbar-nav
-       [nav-link "#/" "Home" :home collapsed?]
-       [nav-link "#/about" "About" :about collapsed?]]]
-     [display-name]]))
+  (let [login-atom (rf/subscribe [:login-status])]
+    (fn []
+      [:nav.navbar.navbar-dark.bg-primary
+       (if-not (:uid @login-atom) ; Is the user logged in?
+         [:div.navbar-toggleable-xs
+          [:a.navbar-brand {:href "#/"} "HPManager"]
+          [:ul.nav.navbar-nav
+           [nav-link "#/" "Login" :home]
+           (:uid @login-atom)]]
+         [:div.collapse.navbar-toggleable-xs
+          [:a.navbar-brand {:href "#/"} "hpmanager"]
+          [:ul.nav.navbar-nav
+           [nav-link "#/" "Login" :home]
+           [nav-link "#/chat" "Chat" :about]
+           [:li.nav-item>a.nav-link {:href "#/"
+                                     :onClick #(rf/dispatch [:logout])}
+            "Logout " (:uid @login-atom)]]])])))
 
 (defn about-page []
   [:div.container
@@ -54,19 +60,28 @@
     [:div.col-md-12
      [:img {:src (str js/context "/img/warning_clojure.png")}]]]])
 
+(defn global-chat-page []
+  [:div.container
+   [cs/collapsable "Chat" [chat/full-chat-page chat/global-chat-channel]]])
+
+(defn login-page []
+  [:div.container
+   [login/login-component]])
+
 (defn home-page []
   [:div.container
    (when-let [docs @(rf/subscribe [:docs])]
      [:div.row>div.col-sm-12
       (cs/button #(socket/chsk-send! [:util/ping {:ping "Ping!"}] 5000) "Ping!")
-      [login/login-component]
-      [cs/collapsable "Chat" [chat/chat-page chat/global-chat-channel :everyone]]
+      [cs/collapsable "Debug" [cs/debug-display]]
+      [cs/button #(rf/dispatch [:refresh :all]) "Refresh all"]
       [cs/collapsable "Document:"
                       [:div {:dangerouslySetInnerHTML
                              {:__html (md->html docs)}}]]])])
 
 (def pages
-  {:home #'home-page
+  {:home #'login-page
+   :chat #'global-chat-page
    :about #'about-page})
 
 (defn page []
@@ -80,6 +95,8 @@
 
 (secretary/defroute "/" []
   (rf/dispatch [:set-active-page :home]))
+(secretary/defroute "/chat" []
+  (rf/dispatch [:set-active-page :chat]))
 
 (secretary/defroute "/about" []
   (rf/dispatch [:set-active-page :about]))
