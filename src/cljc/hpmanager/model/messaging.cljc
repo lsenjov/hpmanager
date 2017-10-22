@@ -57,8 +57,10 @@
                 :time-sent ::message-time-sent)
         :ret ::message)
 
+(->> #{1 2 3 4} (map str) sort (interpose ", ") doall)
 (defn add-message
   [m {:as message ::keys [chat-id message-recipients]}]
+  (log/tracef "add-message. message: %s" message)
   (-> m
       (update-in [::module ::chats chat-id ::queue] conj message)
       ;; Is a set, so we add the conversation to the chat
@@ -89,8 +91,10 @@
   ([q user n]
    (log/infof "q is: %s user is: %s" q user)
    (->> q
-        (filter #(or (= :everyone (::message-recipients %))
-                     ((::message-recipients %) user)))
+        (filter #(or
+                   (= :everyone (::message-recipients %))
+                   ((::message-recipients %) user)
+                   ))
         (take n)))
   ([q user]
    (filter-messages q user 100)))
@@ -120,7 +124,7 @@
 (defn filter-recipients
   "Filters the queue to only return messages for a select group of recipients"
   ([q rec]
-   (filter q #(= rec (::message-recipients rec))))
+   (filter #(= rec (::message-recipients %)) q))
   ([q rec n]
    (take n (filter-recipients q rec))))
 (s/fdef filter-recipients
@@ -129,9 +133,11 @@
 
 (defn get-messages
   ([m chat-id user-set n]
-   (if (= :everyone user-set)
-     (take n (get-in m [::module ::chats chat-id ::queue]))
-     (take n (filter-recipients (get-in m [::module ::chats chat-id ::queue]) user-set))))
+   ;(if (= :everyone user-set)
+   ;(take n (get-in m [::module ::chats chat-id ::queue]))
+   (take n (filter-recipients (get-in m [::module ::chats chat-id ::queue]) user-set))
+   ;)
+   )
   ([m chat-id user-set]
    (get-messages m chat-id user-set 50)))
 (s/fdef get-messages
@@ -156,7 +162,9 @@
   [m chat-id q]
   (-> m
       (update-in [::module ::chats chat-id ::queue] concat q)
-      (sort-chat chat-id)))
+      (sort-chat chat-id)
+      (update-in [::module ::chats chat-id ::all-message-recipients]
+                 (comp set #(apply conj % (->> q ::message-recipients distinct))))))
 (s/fdef add-messages
         :args (s/cat :m ::module
                      :chat-id ::chat-id
@@ -166,9 +174,7 @@
   "Takes a queue of messages, adds them to the correct chat, sorts and ensures they're in order.
   Can take a queue containing messages for multiple chats"
   ([m q]
-   (log/debugf "refresh-messages. q is: %s" q)
    (let [qs (group-by ::chat-id q)
-         _ (log/debugf "sorted. qs is: %s" qs)
          add-fn (apply comp
                        (map (fn [[chat-id queue]] ; Returns a function that takes a module and adds to the queue
                               (fn [module] (add-messages module chat-id queue)))
@@ -181,7 +187,6 @@
 (defn refresh-chat
   "Takes a chat with a chat-id, adds it to the module"
   ([m [chat-id {:as chat ::keys [queue message-recipients]}]]
-   (log/debugf "Chat-id: %s, queue: %s message-recipients: %s" chat-id queue message-recipients)
    (-> m
        (refresh-messages queue)
        (assoc-in [::module ::chats chat-id ::message-recipients] message-recipients)

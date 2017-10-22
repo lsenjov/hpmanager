@@ -14,6 +14,16 @@
         (mes/new-module)
         )))
 
+(comment
+  (mes/get-messages @global-state "global" :everyone)
+  (mes/get-categories @global-state "global")
+  (deref global-state)
+  (-> @global-state ::mes/module ::mes/chats (get "global") ::mes/queue
+      (->> (map ::mes/message-recipients))
+      distinct
+      )
+  )
+
 (def refresh-handlers
   "Map of keyword to function.
   Each function operates on a deref'd global state, and returns a vector of data to
@@ -57,6 +67,7 @@
            (string? message-sender)
            (pos? (count message-content)))
     (let [message (mes/add-time ?data)]
+      (log/debugf "Received message %s from %s to %s" message-content message-sender message-recipients)
       (doseq [uid (if (= :everyone message-recipients) ; TODO filter by chat-id
                     (mes/get-users @global-state chat-id)
                     message-recipients)]

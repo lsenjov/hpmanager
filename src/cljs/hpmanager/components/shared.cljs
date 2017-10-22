@@ -46,17 +46,19 @@
             title-to-component-coll
             (list-to-map title-to-component-coll))]
     (fn []
-      (log/infof "Beginning render loop of tabbed component")
-      (log/infof "sw is: %s, m keys are: %s" @sw (keys m))
       [:div
        [:ul.nav.nav-tabs
-        (map (fn [[k _]]
-               [:ul {:onClick #(rf/dispatch [::tab-switch unique-id k])
-                     :class (if (= @sw k) "active" "")}
-                k])
-             m)]
+        (doall (map (fn [[k _]]
+                      ^{:key k}
+                      [:li>a
+                       ^{:key k}
+                       {:onClick #(rf/dispatch [::tab-switch (str unique-id) k])
+                        :class (if (= @sw k) "active" "")
+                        }
+                       k])
+                    m))]
         ;; Look up the switch. If we haven't picked anything, return an empty div
-        [(get m @sw :div)]])))
+        [(get m @sw :div) {:class "tab-content"}]])))
     
 (defn debug-display
   "Displays the *entire* db map. Should be removed during debugging."
@@ -87,4 +89,5 @@
 (rf/reg-event-db
   ::tab-switch
   (fn [db [_ kw sw]]
+    (log/infof "tab-switch. kw is: %s, sw is: %s" kw sw)
     (assoc-in db [::tab-switch kw] sw)))
