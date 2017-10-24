@@ -30,10 +30,10 @@
                              js/false)]
         [:div
          [:div.tab-pane
-          [:div "Recipients: "
-           (if (= :everyone user-set)
-             "Everyone"
-             (->> user-set (map str) sort (interpose ", ") (apply str)))]
+          ;[:div "Recipients: "
+          ; (if (= :everyone user-set)
+          ;   "Everyone"
+          ;   (->> user-set (map str) sort (interpose ", ") (apply str)))]
           ;; Display messages
           [:div
            (->> @c

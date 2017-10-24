@@ -50,16 +50,15 @@
        [:ul.nav.nav-tabs
         (doall (map (fn [[k _]]
                       ^{:key k}
-                      [:li>a
-                       ^{:key k}
-                       {:onClick #(rf/dispatch [::tab-switch (str unique-id) k])
-                        :class (if (= @sw k) "active" "")
-                        }
-                       k])
-                    m))]
+                      [:li
+                       {:class (if (= @sw k) "active" "")}
+                       [:a
+                        {:onClick #(rf/dispatch [::tab-switch (str unique-id) k])}
+                        k]])
+                    (sort-by (comp str first) m)))]
         ;; Look up the switch. If we haven't picked anything, return an empty div
         [(get m @sw :div) {:class "tab-content"}]])))
-    
+
 (defn debug-display
   "Displays the *entire* db map. Should be removed during debugging."
   []
