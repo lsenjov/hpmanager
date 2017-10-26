@@ -14,6 +14,8 @@
     [taoensso.timbre :as log]
     [crypto.password.pbkdf2 :as crypto]
 
+    [hpmanager.shared :as shared]
+
     [hpmanager.model.users :as users])
   )
 
@@ -48,11 +50,11 @@
 (defn get-character
   "Gets a character from the database by uuid"
   [uuid]
-  (get-obj ::characters uuid))
+  (get-obj ::shared/characters uuid))
 (defn set-character!
   "Overwrites a character in the database, or sets if doesn't exist"
   [character]
-  (set-obj! ::characters character))
+  (set-obj! ::shared/characters character))
 (comment
   (set-character! {:name "testchar"})
   (assoc-at! *db* [:other-key] "other data")
@@ -63,7 +65,7 @@
      tx))
   (with-read-transaction [*db* tx]
     (-> tx
-        (get-at [::characters])
+        (get-at [::shared/characters])
         keys))
   )
 

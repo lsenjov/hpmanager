@@ -5,6 +5,9 @@
             )
   )
 
+(s/def ::hp-char
+  (s/and ::names/named ::skills/skillmap))
+
 (defn construct-character
   [char-name skill-map]
   (merge char-name skill-map))

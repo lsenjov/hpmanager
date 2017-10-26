@@ -4,8 +4,7 @@
             )
   )
 
-;; TODO figure whether to put this under a ::module subheader for easy synchronising later on
-;; Choose early!
+;; This won't go under a ::module subheader, as this is used by other model classes
 (s/def ::first-name (s/and string? #(pos? (count %))))
 (s/def ::clearance (-> shared/clearance-to-rank keys set))
 (s/def ::zone-name (s/and string? #(= 3 (count %))))
@@ -24,7 +23,8 @@
                      :clone-num ::clone-num)
         :ret ::named)
 
-(defn get-name
+(defn to-string
+  "Converts a name map to a string"
   [{::keys [first-name clearance zone-name clone-num]}]
   (str first-name \- clearance \- zone-name \- clone-num))
 (defn zap

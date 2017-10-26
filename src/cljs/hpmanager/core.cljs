@@ -15,6 +15,8 @@
             [hpmanager.components.shared :as cs]
             [hpmanager.components.chat :as chat]
             [hpmanager.components.login :as login]
+            [hpmanager.components.editor :as editor]
+            [hpmanager.sync :as syn]
             )
   (:import goog.History))
 
@@ -50,6 +52,7 @@
           [:a.navbar-brand {:href "#/chat"} "HPManager"]
           [:ul.nav.navbar-nav
            [nav-link "#/chat" "Chat" :about]
+           [nav-link "#/edit" "Edit" :edit]
            [nav-link "#/debug" "Debug" :debug]
            [:li.nav-item>a.nav-link {:href "#/"
                                      :onClick #(rf/dispatch [:logout])}
@@ -73,6 +76,12 @@
   [:div.container
    [cs/debug-display]])
 
+(defn edit-page []
+  [:div.container
+   [:h1 "Edit Page"]
+   [editor/edit-single-text [:test :test-text]]
+   ])
+
 (defn home-page []
   [:div.container
    (when-let [docs @(rf/subscribe [:docs])]
@@ -88,6 +97,7 @@
   {:home #'login-page
    :chat #'global-chat-page
    :debug #'debug-page
+   :edit #'edit-page
    :about #'about-page})
 
 (defn page []
@@ -103,6 +113,8 @@
   (rf/dispatch [:set-active-page :home]))
 (secretary/defroute "/chat" []
   (rf/dispatch [:set-active-page :chat]))
+(secretary/defroute "/edit" []
+  (rf/dispatch [:set-active-page :edit]))
 (secretary/defroute "/debug" []
   (rf/dispatch [:set-active-page :debug]))
 
