@@ -14,7 +14,7 @@
     [taoensso.timbre :as log]
     [crypto.password.pbkdf2 :as crypto]
 
-    [hpmanager.shared :as shared]
+    [hpmanager.model.shared :as shared]
 
     [hpmanager.model.users :as users])
   )
@@ -28,10 +28,7 @@
   :start (open-database (env :database-filepath))
   :stop (close-database *db*))
 
-(defn- gen-uuid
-  "Generates a random uuid"
-  []
-  (str (java.util.UUID/randomUUID)))
+(def gen-uuid shared/gen-uuid)
 
 (defn- get-obj
   "Gets an object type by uuid"
