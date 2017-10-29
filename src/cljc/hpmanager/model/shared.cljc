@@ -5,7 +5,7 @@
 
 (def root-kws
   "A set detailing all the possible root object types of the db"
-  #{::characters ::crises})
+  #{::characters ::crises ::minions})
 
 (def rank-to-clearance
   {0 "IR" 1 "R" 2 "O" 3 "Y" 4 "G" 5 "B" 6 "I" 7 "V" 8 "U"})
@@ -28,18 +28,18 @@
       (max 0)
       rank-to-clearance))
 ;; Stolen directly from the cljs source, because I can't get it to reference locally TODO
-(defn- random-uuid []
-  (letfn [(hex [] (.toString (rand-int 16) 16))]
-    (let [rhex (.toString (bit-or 0x8 (bit-and 0x3 (rand-int 16))) 16)]
-      (uuid
-        (str (hex) (hex) (hex) (hex)
-             (hex) (hex) (hex) (hex) "-"
-             (hex) (hex) (hex) (hex) "-"
-             "4"   (hex) (hex) (hex) "-"
-             rhex  (hex) (hex) (hex) "-"
-             (hex) (hex) (hex) (hex)
-             (hex) (hex) (hex) (hex)
-             (hex) (hex) (hex) (hex))))))
+#?(:cljs
+   (defn- random-uuid []
+     (letfn [(hex [] (.toString (rand-int 16) 16))]
+       (let [rhex (.toString (bit-or 0x8 (bit-and 0x3 (rand-int 16))) 16)]
+         (str (hex) (hex) (hex) (hex)
+              (hex) (hex) (hex) (hex) "-"
+              (hex) (hex) (hex) (hex) "-"
+              "4"   (hex) (hex) (hex) "-"
+              rhex  (hex) (hex) (hex) "-"
+              (hex) (hex) (hex) (hex)
+              (hex) (hex) (hex) (hex)
+              (hex) (hex) (hex) (hex))))))
 
 (defn gen-uuid
   "Generates a random uuid value"

@@ -2,20 +2,19 @@
   "Manages syncing an object in the serverside database,
   with a user modifying it client side"
   (:require
+    [hpmanager.model.shared :as shared]
+
     #?@(:clj
          [[codax.core :refer :all]
-
-          [hpmanager.shared :as shared]
 
           [hpmanager.db.core :as db :refer [*db*]]
           [hpmanager.routes.sockets :as sockets]]
          :cljs
          [[re-frame.core :as rf]
 
-          [hpmanager.shared :as shared]
-
           [hpmanager.sockets :as sockets]]
-       )))
+         )
+    ))
 
 ;; The client requests an object from the database (or to create one if none exist)
 ;; The server grabs it and returns the path.

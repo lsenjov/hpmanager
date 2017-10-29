@@ -3,7 +3,10 @@
   :description "A program designed for running Paranoia: High Programmers"
   :url "http://example.com/FIXME"
 
-  :dependencies [[ch.qos.logback/logback-classic "1.1.7"]
+  :dependencies [[org.clojure/clojure "1.9.0-beta2"]
+                 [org.clojure/clojurescript "1.9.908" :scope "provided"]
+                 
+                 [ch.qos.logback/logback-classic "1.1.7"]
                  [clj-time "0.13.0"]
                  [cljs-ajax "0.6.0"]
                  [codax "1.0.2-SNAPSHOT"]
@@ -23,8 +26,6 @@
                  [metosin/ring-http-response "0.9.0"]
                  [mount "0.1.11"]
                  [mysql/mysql-connector-java "6.0.5"]
-                 [org.clojure/clojure "1.9.0-beta2"]
-                 [org.clojure/clojurescript "1.9.908" :scope "provided"]
                  [org.clojure/tools.cli "0.3.5"]
                  [org.clojure/tools.logging "0.3.1"]
                  [org.webjars.bower/tether "1.4.0"]

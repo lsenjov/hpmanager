@@ -116,8 +116,10 @@
                      :chat-id ::chat-id))
 (defn new-module
   "Creates a new chat module"
-  []
-  (new-chat {::module {}} global-chat-channel))
+  ([m]
+   (new-chat m global-chat-channel))
+  ([]
+   (new-module {::module {}})))
 (s/fdef new-module
         :ret ::module)
 

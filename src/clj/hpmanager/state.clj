@@ -71,6 +71,7 @@
       (doseq [uid (if (= :everyone message-recipients) ; TODO filter by chat-id
                     (mes/get-users @global-state chat-id)
                     message-recipients)]
+        (log/debugf "Sending message '%s' to user %s" message uid)
         (chsk-send! uid [::mes/recv message])))
     (log/errorf "Received a message, invalid form: %s" ?data)))
 
